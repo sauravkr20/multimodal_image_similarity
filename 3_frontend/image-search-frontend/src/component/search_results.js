@@ -60,7 +60,7 @@ export default function SearchResults({ results }) {
                     <strong>Item ID:</strong> {img.item_id}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Score:</strong> {img.score.toFixed(4)}
+                    <strong>Score:</strong> {img.combined_score.toFixed(2)}
                   </Typography>
                   
                 </Box>

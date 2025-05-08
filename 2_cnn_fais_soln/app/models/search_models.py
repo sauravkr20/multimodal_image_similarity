@@ -12,4 +12,4 @@ class SearchResultItem(BaseModel):
     score: float
 
 class SearchResponse(BaseModel):
-    results: List[SearchResultItem]
+    results: List[object]

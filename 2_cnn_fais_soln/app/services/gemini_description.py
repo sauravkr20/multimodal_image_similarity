@@ -39,7 +39,7 @@ class GeminiDescriptionService:
                 contents=[content]
             )
 
-            print(response)
+            # print(response)
 
             if response.candidates and len(response.candidates) > 0:
                 # Extract text from the first part of the content of the first candidate

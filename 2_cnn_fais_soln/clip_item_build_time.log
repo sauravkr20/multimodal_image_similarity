@@ -1,0 +1,7 @@
+Batch 0 - 1000 processed in 35840.32 ms
+Total time elapsed: 35.84 seconds
+Batch 1000 - 2000 processed in 44325.04 ms
+Total time elapsed: 80.17 seconds
+Batch 2000 - 2611 processed in 22009.78 ms
+Total time elapsed: 102.18 seconds
+Total time for CLIP item collection: 102.18 seconds

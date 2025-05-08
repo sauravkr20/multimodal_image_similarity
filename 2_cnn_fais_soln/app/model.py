@@ -51,7 +51,7 @@ def extract_clip_embedding(image: Image.Image) -> np.ndarray:
 
 
 def extract_clip_text_embedding(text: str) -> np.ndarray:
-    print(f"Extracting clip text embedding for '{text}'...")
+    # print(f"Extracting clip text embedding for '{text}'...")
     tokens = clip.tokenize([text], truncate=True).to(device)  # tokenize returns a tensor
     with torch.no_grad():
         text_emb = clip_model.encode_text(tokens)

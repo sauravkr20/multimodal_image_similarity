@@ -12,8 +12,8 @@ export default function SearchMethodSelect({ method, setMethod }) {
         onChange={(e) => setMethod(e.target.value)}
       >
         <MenuItem value="cnn_faiss">CNN + FAISS</MenuItem>
-        <MenuItem value="clip_faiss">CLIP + FAISS</MenuItem>
-        <MenuItem value="clip_gemini_faiss">CLIP + Gemini + FAISS</MenuItem>
+        <MenuItem value="clip_faiss">CLIP + CHROMA</MenuItem>
+        <MenuItem value="clip_gemini_chroma">CLIP + Gemini + CHROMA</MenuItem>
         {/* Add more */}
       </Select>
     </FormControl>

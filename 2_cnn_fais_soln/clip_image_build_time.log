@@ -1,0 +1,54 @@
+Batch 0 - 1000 processed in 55.41 ms
+Total time elapsed: 0.06 seconds
+Batch 1000 - 2000 processed in 54.96 ms
+Total time elapsed: 0.11 seconds
+Batch 2000 - 3000 processed in 56.61 ms
+Total time elapsed: 0.17 seconds
+Batch 3000 - 4000 processed in 59.52 ms
+Total time elapsed: 0.23 seconds
+Batch 4000 - 5000 processed in 64.13 ms
+Total time elapsed: 0.29 seconds
+Batch 5000 - 6000 processed in 125.58 ms
+Total time elapsed: 0.42 seconds
+Batch 6000 - 7000 processed in 73.96 ms
+Total time elapsed: 0.49 seconds
+Batch 7000 - 8000 processed in 70.21 ms
+Total time elapsed: 0.56 seconds
+Batch 8000 - 9000 processed in 68.79 ms
+Total time elapsed: 0.63 seconds
+Batch 9000 - 10000 processed in 61.47 ms
+Total time elapsed: 0.69 seconds
+Batch 10000 - 11000 processed in 65.60 ms
+Total time elapsed: 0.76 seconds
+Batch 11000 - 12000 processed in 60.40 ms
+Total time elapsed: 0.82 seconds
+Batch 12000 - 12275 processed in 17.28 ms
+Total time elapsed: 0.83 seconds
+Total time for CLIP image collection: 0.83 seconds
+Batch 0 - 1000 processed in 82412.70 ms
+Total time elapsed: 82.41 seconds
+Batch 1000 - 2000 processed in 94569.66 ms
+Total time elapsed: 176.98 seconds
+Batch 2000 - 3000 processed in 85008.64 ms
+Total time elapsed: 261.99 seconds
+Batch 3000 - 4000 processed in 87881.49 ms
+Total time elapsed: 349.87 seconds
+Batch 4000 - 5000 processed in 88623.16 ms
+Total time elapsed: 438.50 seconds
+Batch 5000 - 6000 processed in 86988.37 ms
+Total time elapsed: 525.48 seconds
+Batch 6000 - 7000 processed in 87311.68 ms
+Total time elapsed: 612.80 seconds
+Batch 7000 - 8000 processed in 81610.08 ms
+Total time elapsed: 694.41 seconds
+Batch 8000 - 9000 processed in 81879.34 ms
+Total time elapsed: 776.29 seconds
+Batch 9000 - 10000 processed in 112997.61 ms
+Total time elapsed: 889.28 seconds
+Batch 10000 - 11000 processed in 113046.74 ms
+Total time elapsed: 1002.33 seconds
+Batch 11000 - 12000 processed in 112958.16 ms
+Total time elapsed: 1115.29 seconds
+Batch 12000 - 12275 processed in 29668.94 ms
+Total time elapsed: 1144.96 seconds
+Total time for CLIP image collection: 1144.96 seconds
