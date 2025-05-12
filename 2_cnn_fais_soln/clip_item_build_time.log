@@ -5,3 +5,33 @@ Total time elapsed: 80.17 seconds
 Batch 2000 - 2611 processed in 22009.78 ms
 Total time elapsed: 102.18 seconds
 Total time for CLIP item collection: 102.18 seconds
+Batch 0 - 1000 processed in 55.89 ms
+Total time elapsed: 0.06 seconds
+Batch 1000 - 2000 processed in 67.51 ms
+Total time elapsed: 0.12 seconds
+Batch 2000 - 2611 processed in 29.03 ms
+Total time elapsed: 0.15 seconds
+Total time for CLIP item collection: 0.15 seconds
+Batch 0 - 1000 processed in 153.63 ms
+Total time elapsed: 0.15 seconds
+Batch 1000 - 2000 processed in 188.00 ms
+Total time elapsed: 0.34 seconds
+Batch 2000 - 2611 processed in 104.33 ms
+Total time elapsed: 0.45 seconds
+Total time for CLIP item collection: 0.45 seconds
+Batch 0 - 1000 processed in 29776.59 ms
+Total time elapsed: 29.78 seconds
+Batch 1000 - 2000 processed in 28691.39 ms
+Total time elapsed: 58.47 seconds
+Batch 2000 - 2611 processed in 17377.83 ms
+Total time elapsed: 75.85 seconds
+Total time for CLIP item collection: 75.85 seconds
+Batch 0 - 1000 processed in 31103.45 ms
+Total time elapsed: 31.10 seconds
+Batch 0 - 1000 processed in 30852.20 ms
+Total time elapsed: 30.85 seconds
+Batch 1000 - 2000 processed in 33589.00 ms
+Total time elapsed: 64.44 seconds
+Batch 2000 - 2611 processed in 23268.06 ms
+Total time elapsed: 87.71 seconds
+Total time for CLIP item collection: 87.71 seconds

@@ -36,7 +36,7 @@ function Search() {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("method", method);  
-    formData.append("top_k", 10);
+    formData.append("top_k", 100);
 
     setLoading(true);
     try {

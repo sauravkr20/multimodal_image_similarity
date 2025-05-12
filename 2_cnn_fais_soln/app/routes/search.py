@@ -9,7 +9,7 @@ search_controller: SearchController = None  # Initialized in main.py
 async def search_image(
     file: UploadFile = File(...),
     method: str = Form("cnn_faiss", description="Search method: cnn_faiss or clip_faiss"),
-    top_k: int = Form(5, ge=1, le=50, description="Number of top results to return")
+    top_k: int = Form(5, ge=1, le=200, description="Number of top results to return")
 ):
     print(f"Received search request: method={method}, top_k={top_k}")
     class Params:

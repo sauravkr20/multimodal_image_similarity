@@ -6,11 +6,14 @@ from pymongo import MongoClient
 from starlette.datastructures import UploadFile
 from app.models.search_models import SearchRequest
 from app.controllers.search_controller import SearchController
-from app.model import extract_embedding, extract_clip_embedding
-from app.services.cnn_faiss import CNNFaissSearch
-from app.services.clip_faiss import CLIPFaissSearch
+from app.db.chroma import ChromaDBClient
+from app.model import extract_embedding, extract_clip_embedding, extract_clip_text_embedding
+# from app.services.cnn_faiss import CNNFaissSearch
+# from app.services.clip_faiss import CLIPFaissSearch
+from app.services.clip_chroma import CLIPChromaSearch
+from app.services.cnn_chroma import CNNChromaSearch
 from app.search import load_index, search
-from app.config import SHOE_IMAGES_FOLDER, TEST_SET_MODIFY_FOLDER, FAISS_INDEX_PATH, CLIP_FAISS_INDEX_PATH, PRODUCT_COLLECTION, EMBEDDING_CLIP_FAISS_METADATA_COLLECTION, EMBEDDING_CNN_FAISS_METADATA_COLLECTION
+from app.config import SHOE_IMAGES_FOLDER, TEST_SET_MODIFY_FOLDER, FAISS_INDEX_PATH, CLIP_FAISS_INDEX_PATH, PRODUCT_COLLECTION, EMBEDDING_CLIP_FAISS_METADATA_COLLECTION, EMBEDDING_CNN_FAISS_METADATA_COLLECTION, CHROMA_CNN_EMBEDDINGS_COLLECTION
 from tests.test_modification import apply_modification
 
 # MongoDB setup
@@ -25,11 +28,24 @@ cnn_index = load_index(FAISS_INDEX_PATH)
 clip_index = load_index(CLIP_FAISS_INDEX_PATH)
 
 # Initialize services
-cnn_faiss_service = CNNFaissSearch(cnn_index, extract_embedding, search)  # Replace None with actual search fn if needed
-clip_faiss_service = CLIPFaissSearch(clip_index, extract_clip_embedding, search)  # Replace None with actual search fn if needed
+# cnn_faiss_service = CNNFaissSearch(cnn_index, extract_embedding, search)  # Replace None with actual search fn if needed
+# clip_faiss_service = CLIPFaissSearch(clip_index, extract_clip_embedding, search)  # Replace None with actual search fn if needed
+chroma_client = ChromaDBClient(persist_directory="../data/chroma_db")
 
-# Initialize controller with both services
-search_controller = SearchController(cnn_faiss_service, clip_faiss_service)
+clip_chroma_search = CLIPChromaSearch(
+    chroma_client=chroma_client,
+    extract_clip_embedding=extract_clip_embedding,
+    extract_clip_text_embedding=extract_clip_text_embedding
+)
+
+cnn_chroma_search = CNNChromaSearch(
+    chroma_client=chroma_client,
+    collection_name=CHROMA_CNN_EMBEDDINGS_COLLECTION, 
+    extract_embedding_func=extract_embedding  
+)
+
+
+search_controller = SearchController(cnn_chroma_search, clip_chroma_search)
 
 # Ask for test case name
 test_case_name = input("Enter test case name (folder name) to save modified images and logs: ").strip()
@@ -88,7 +104,7 @@ async def run_search_test(search_controller, metadata_col, log_file_path, method
 
         upload_file_original = await create_upload_file_from_path(image_abs_path)
         # Create SearchRequest params instance
-        params = SearchRequest(method=method_name, top_k=5)
+        params = SearchRequest(method=method_name, top_k=15)
 
         # Original image search
         search_start = time.time()
@@ -156,20 +172,20 @@ async def run_search_test(search_controller, metadata_col, log_file_path, method
     print(f"[{method_name}] Detailed log saved to {log_file_path}")
 
 async def main():
-    # Run CNN test
-    await run_search_test(
-        search_controller=search_controller,
-        metadata_col=embedding_cnn_faiss_metadata_col,
-        log_file_path=os.path.join(modified_images_folder, f"{test_case_name}_cnn.log"),
-        method_name="cnn_faiss"
-    )
+    # # Run CNN test
+    # await run_search_test(
+    #     search_controller=search_controller,
+    #     metadata_col=embedding_cnn_faiss_metadata_col,
+    #     log_file_path=os.path.join(modified_images_folder, f"{test_case_name}_cnn.log"),
+    #     method_name="cnn_faiss"
+    # )
 
     # Run CLIP test
     await run_search_test(
         search_controller=search_controller,
         metadata_col=embedding_clip_faiss_metadata_col,
-        log_file_path=os.path.join(modified_images_folder, f"{test_case_name}_clip.log"),
-        method_name="clip_faiss"
+        log_file_path=os.path.join(modified_images_folder, f"{test_case_name}_clip_gemini.log"),
+        method_name="clip_gemini_chroma"
     )
 
 if __name__ == "__main__":

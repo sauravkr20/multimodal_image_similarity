@@ -34,7 +34,7 @@ class SearchController:
             return await self.clip_chroma_search.search_image(image, params.top_k)
         
         elif params.method == "clip_gemini_chroma":
-            description = await self.gemini_service.generate_description(img_bytes)  
+            description = await self.gemini_service.generate_description([img_bytes])  
             print(f"Generated description: {description}")
             return await self.clip_chroma_search.search_image_and_text(image, description, params.top_k)
         

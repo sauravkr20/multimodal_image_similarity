@@ -6,9 +6,13 @@ import numpy as np
 import json
 import time
 from pathlib import Path
-from app.config import SHOE_IMAGES_FOLDER, IMAGE_PATHS_JSON, SHOE_PRODUCT_JSON_PATH, CHROMA_CLIP_IMAGE_EMBEDDINGS_COLLECTION, CHROMA_CLIP_ITEM_EMBEDDINGS_COLLECTION, CHROMA_CNN_EMBEDDINGS_COLLECTION
+from app.config import CHROMA_VERTEX_IMAGE_EMBEDDINGS_COLLECTION, CHROMA_VERTEX_ITEM_EMBEDDINGS_COLLECTION, SHOE_IMAGES_FOLDER, IMAGE_PATHS_JSON, SHOE_PRODUCT_JSON_PATH, CHROMA_CLIP_IMAGE_EMBEDDINGS_COLLECTION, CHROMA_CLIP_ITEM_EMBEDDINGS_COLLECTION, CHROMA_CNN_EMBEDDINGS_COLLECTION
 from app.db.chroma import ChromaDBClient  # Assuming ChromaDBClient is your Chroma client
 from app.db.mongo import products_col
+from app.services.vertex_model import VertexAIService
+
+
+from app.scripts.fetch_gemini_description import fetch_products_batch
 
 BATCH_SIZE = 1000
 
@@ -138,76 +142,144 @@ def build_cnn_image_collection(chroma_client: ChromaDBClient):
 
 
 
-def build_clip_item_collection(chroma_client: ChromaDBClient):
-    with open(SHOE_PRODUCT_JSON_PATH, "r") as f:
-        products = json.load(f)
-
-    print(f"Processing {len(products)} items for CLIP item collection...")
-
-    all_text_embeddings = []
-    all_metadata_docs = []
+def build_clip_item_collection(chroma_client):
+    chroma_client.reset_collection(CHROMA_CLIP_ITEM_EMBEDDINGS_COLLECTION)
+    total_products = products_col.count_documents({})
+    print(f"Processing {total_products} items for CLIP item collection...")
 
     total_time_ms = 0
     batch_times = []
-    total_items = len(products)
 
-    for batch_start in range(0, len(products), BATCH_SIZE):
-        batch_end = min(batch_start + BATCH_SIZE, len(products))
-        batch_metadata = products[batch_start:batch_end]
+    for batch_start in range(0, total_products, BATCH_SIZE):
+        batch_end = min(batch_start + BATCH_SIZE, total_products)
+        batch_metadata = fetch_products_batch(skip=batch_start, limit=BATCH_SIZE)
 
         batch_start_time = time.perf_counter()
 
-        # Step 1: Prepare item metadata and embed text
-        item_ids = [product['item_id'] for product in batch_metadata]
-
-        # Flatten and store metadata directly in the item entry for filtering
         batch_embeddings = []
         batch_metadata_docs = []
 
-        
         for idx, product in enumerate(batch_metadata, start=batch_start):
-            item_id = product["item_id"]
+            item_id = product.get("item_id")
             metadata = product.get("metadata", {})
+            description = product.get("description", "")
 
-            # Flatten metadata
+            if not description:
+                print(f"Warning: Product {item_id} has no description, skipping embedding.")
+                continue
+
             flattened_metadata = flatten_metadata(metadata)
 
             try:
-                text = metadata_to_text(metadata)
-                emb = extract_clip_text_embedding(text=text)
-
+                emb = extract_clip_text_embedding(text=description)
                 batch_embeddings.append(emb)
+
                 meta_data_curr = {
-                    "item_id": item_id,
+                    "item_id": str(item_id),  # ensure string id for Chroma
                     **flattened_metadata
                 }
+                print(f"metadata looks like {meta_data_curr}")
                 batch_metadata_docs.append(meta_data_curr)
 
-                if (idx + 1) % 100 == 0 or (idx + 1) == total_items:
-                    if idx <1000 : 
-                        print(f"metadata looks like {meta_data_curr}")
-                    print(f"Processed {idx + 1}/{total_items} images")
-                
+                if (idx + 1) % 100 == 0 or (idx + 1) == total_products:
+                    print(f"Processed {idx + 1}/{total_products} items")
+
             except Exception as e:
                 print(f"Failed to process item {item_id}: {e}")
 
-        # Step 2: Insert batch of CLIP text embeddings and metadata into Chroma
         if batch_embeddings:
             embeddings_np = np.stack(batch_embeddings).astype("float32")
             item_ids = [meta["item_id"] for meta in batch_metadata_docs]
 
             chroma_client.insert_embeddings(
                 collection_name=CHROMA_CLIP_ITEM_EMBEDDINGS_COLLECTION,
-                ids = item_ids,
+                ids=item_ids,
                 embeddings=embeddings_np,
                 metadatas=batch_metadata_docs
             )
 
         total_time_ms, batch_times = log_batch_time(batch_start, batch_end, batch_start_time, total_time_ms, batch_times, CLIP_ITEM_LOG_FILE_PATH)
 
-    print(f"Inserted {len(all_text_embeddings)} CLIP item embeddings into Chroma item collection.")
+    print(f"Inserted embeddings for {total_products} items into Chroma collection.")
     with open(CLIP_ITEM_LOG_FILE_PATH, "a") as log_file:
         log_file.write(f"Total time for CLIP item collection: {total_time_ms / 1000:.2f} seconds\n")
+
+# def build_clip_item_collection(chroma_client: ChromaDBClient):
+
+#     chroma_client.reset_collection(CHROMA_CLIP_ITEM_EMBEDDINGS_COLLECTION)
+
+#     with open(SHOE_PRODUCT_JSON_PATH, "r") as f:
+#         products = json.load(f)
+
+#     print(f"Processing {len(products)} items for CLIP item collection...")
+
+#     all_text_embeddings = []
+#     all_metadata_docs = []
+
+#     total_time_ms = 0
+#     batch_times = []
+#     total_items = len(products)
+
+#     for batch_start in range(0, len(products), BATCH_SIZE):
+#         batch_end = min(batch_start + BATCH_SIZE, len(products))
+#         batch_metadata = products[batch_start:batch_end]
+
+#         batch_start_time = time.perf_counter()
+
+#         # Step 1: Prepare item metadata and embed text
+#         item_ids = [product['item_id'] for product in batch_metadata]
+
+#         # Flatten and store metadata directly in the item entry for filtering
+#         batch_embeddings = []
+#         batch_metadata_docs = []
+
+        
+#         for idx, product in enumerate(batch_metadata, start=batch_start):
+#             item_id = product["item_id"]
+#             metadata = product.get("metadata", {})
+
+#             description = product.get("description")
+#             print("description is ", description)
+#             # Flatten metadata
+#             flattened_metadata = flatten_metadata(metadata)
+
+#             try:
+#                 # text = metadata_to_text(metadata)
+#                 text = description
+#                 emb = extract_clip_text_embedding(text=text)
+
+#                 batch_embeddings.append(emb)
+#                 meta_data_curr = {
+#                     "item_id": item_id,
+#                     **flattened_metadata
+#                 }
+#                 batch_metadata_docs.append(meta_data_curr)
+
+#                 if (idx + 1) % 100 == 0 or (idx + 1) == total_items:
+#                     if idx <1000 : 
+#                         print(f"metadata looks like {meta_data_curr}")
+#                     print(f"Processed {idx + 1}/{total_items} images")
+                
+#             except Exception as e:
+#                 print(f"Failed to process item {item_id}: {e}")
+
+#         # Step 2: Insert batch of CLIP text embeddings and metadata into Chroma
+#         if batch_embeddings:
+#             embeddings_np = np.stack(batch_embeddings).astype("float32")
+#             item_ids = [meta["item_id"] for meta in batch_metadata_docs]
+
+#             chroma_client.insert_embeddings(
+#                 collection_name=CHROMA_CLIP_ITEM_EMBEDDINGS_COLLECTION,
+#                 ids = item_ids,
+#                 embeddings=embeddings_np,
+#                 metadatas=batch_metadata_docs
+#             )
+
+#         total_time_ms, batch_times = log_batch_time(batch_start, batch_end, batch_start_time, total_time_ms, batch_times, CLIP_ITEM_LOG_FILE_PATH)
+
+#     print(f"Inserted {len(all_text_embeddings)} CLIP item embeddings into Chroma item collection.")
+#     with open(CLIP_ITEM_LOG_FILE_PATH, "a") as log_file:
+#         log_file.write(f"Total time for CLIP item collection: {total_time_ms / 1000:.2f} seconds\n")
 
 
 def build_clip_image_collection(chroma_client: ChromaDBClient):
@@ -316,3 +388,96 @@ def metadata_to_text(metadata: dict) -> str:
                 parts.append(f"{clean_key}: {value}")
 
     return ", ".join(parts)
+
+
+def build_vertex_item_collection(chroma_client: ChromaDBClient, vertex_service: VertexAIService):
+    chroma_client.reset_collection(CHROMA_VERTEX_ITEM_EMBEDDINGS_COLLECTION)
+    total_products = products_col.count_documents({})
+    print(f"Processing {total_products} items for Vertex item collection...")
+
+    total_time_ms = 0
+    batch_times = []
+
+    for batch_start in range(0, total_products, BATCH_SIZE):
+        batch_end = min(batch_start + BATCH_SIZE, total_products)
+        batch_metadata = fetch_products_batch(skip=batch_start, limit=BATCH_SIZE)
+
+        batch_start_time = time.perf_counter()
+        batch_embeddings = []
+        batch_metadata_docs = []
+
+        for idx, product in enumerate(batch_metadata, start=batch_start):
+            item_id = product.get("item_id")
+            description = product.get("description", "")
+            metadata = product.get("metadata", {})
+
+            if not description:
+                print(f"Skipping {item_id} - no description")
+                continue
+
+            try:
+                emb = vertex_service.get_text_embedding(description)
+                batch_embeddings.append(emb)
+                
+                batch_metadata_docs.append({
+                    "item_id": item_id,
+                    **flatten_metadata(metadata)
+                })
+
+            except Exception as e:
+                print(f"Error processing {item_id}: {e}")
+
+        if batch_embeddings:
+            embeddings_np = np.stack(batch_embeddings)
+            chroma_client.insert_embeddings(
+                collection_name=CHROMA_VERTEX_ITEM_EMBEDDINGS_COLLECTION,
+                embeddings=embeddings_np,
+                metadatas=batch_metadata_docs
+            )
+
+        total_time_ms, batch_times = log_batch_time(batch_start, batch_end, batch_start_time, total_time_ms, batch_times, "vertex_item.log")
+
+def build_vertex_image_collection(chroma_client: ChromaDBClient, vertex_service: VertexAIService):
+    chroma_client.reset_collection(CHROMA_VERTEX_IMAGE_EMBEDDINGS_COLLECTION)
+    
+    with open(IMAGE_PATHS_JSON, "r") as f:
+        image_metadata = json.load(f)
+
+    total_images = len(image_metadata)
+    print(f"Processing {total_images} images for Vertex image collection...")
+
+    for batch_start in range(0, total_images, BATCH_SIZE):
+        batch_end = min(batch_start + BATCH_SIZE, total_images)
+        batch = image_metadata[batch_start:batch_end]
+
+        batch_embeddings = []
+        batch_metadata_docs = []
+
+        for record in batch:
+            try:
+                image_path = Path(SHOE_IMAGES_FOLDER) / record["image_path"]
+                if not image_path.exists():
+                    continue
+                
+                with open(image_path, "rb") as f:
+                    image_bytes = f.read()
+                
+                emb = vertex_service.get_image_embedding(image_bytes)
+                batch_embeddings.append(emb)
+                
+                batch_metadata_docs.append({
+                    "image_id": record["image_id"],
+                    "item_id": record["item_id"],
+                    **flatten_metadata(get_item_metadata_batch([record["item_id"]]))
+                })
+
+            except Exception as e:
+                print(f"Error processing {record['image_id']}: {e}")
+
+        if batch_embeddings:
+            embeddings_np = np.stack(batch_embeddings)
+            chroma_client.insert_embeddings(
+                collection_name=CHROMA_VERTEX_IMAGE_EMBEDDINGS_COLLECTION,
+                embeddings=embeddings_np,
+                metadatas=batch_metadata_docs
+            )
